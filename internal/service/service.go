@@ -8,18 +8,18 @@ import (
 	"time"
 
 	"github.com/Karthik-Kondaveeti/blink/internal/cache"
+	"github.com/Karthik-Kondaveeti/blink/internal/database"
 	"github.com/Karthik-Kondaveeti/blink/internal/generator"
-	interfaces "github.com/Karthik-Kondaveeti/blink/internal/storage"
 )
 
 type Service struct {
-	db        interfaces.Database
+	db        database.Database
 	cdb       cache.Cache
 	generator generator.Generator
 	logger    *slog.Logger
 }
 
-func New(db interfaces.Database, cdb cache.Cache, generator generator.Generator, logger *slog.Logger) (*Service, error) {
+func New(db database.Database, cdb cache.Cache, generator generator.Generator, logger *slog.Logger) (*Service, error) {
 	return &Service{
 		db:        db,
 		cdb:       cdb,
