@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-var ErrCacheMiss = errors.New("CacheMiss")
+var ErrCacheMiss = errors.New("no change")
 
 type Cache interface {
 	Get(ctx context.Context, key string) (string, error)

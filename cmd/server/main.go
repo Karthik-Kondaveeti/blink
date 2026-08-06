@@ -8,31 +8,29 @@ import (
 	"strconv"
 
 	"github.com/Karthik-Kondaveeti/blink/internal/cache/redis"
-	snowflake "github.com/Karthik-Kondaveeti/blink/internal/generator/snowflake"
+	"github.com/Karthik-Kondaveeti/blink/internal/database/postgres"
+	"github.com/Karthik-Kondaveeti/blink/internal/generator/snowflake"
 	"github.com/Karthik-Kondaveeti/blink/internal/handler"
 	"github.com/Karthik-Kondaveeti/blink/internal/logger"
 	"github.com/Karthik-Kondaveeti/blink/internal/service"
-	"github.com/Karthik-Kondaveeti/blink/internal/storage/postgres"
-	"github.com/joho/godotenv"
+	"github.com/Karthik-Kondaveeti/blink/migration"
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("error loading env", err)
-		return
-	}
-
 	logger := logger.New()
 
-	databaseAddress := os.Getenv("DB_URL")
+	connStr := os.Getenv("DATABASE_URL")
 	databaseTableName := os.Getenv("TABLE_NAME")
-	database, err := postgres.New(databaseAddress, databaseTableName)
+	db, err := postgres.New(connStr, databaseTableName)
 	if err != nil {
 		log.Fatal("error creating new database", err)
 		return
 	}
-	defer database.Close()
+	defer db.Close()
+
+	if err := migration.RunMigrations(connStr); err != nil {
+		log.Fatal("error running migrations", err)
+	}
 
 	workerID, err := strconv.ParseUint(os.Getenv("WORKER_ID"), 10, 16)
 	if err != nil {
@@ -46,16 +44,16 @@ func main() {
 		return
 	}
 
-	cacheAddress := os.Getenv("CACHE_URL")
-	cachePassword := os.Getenv("CACHE_PASS")
-	cache, err := redis.New(cacheAddress, cachePassword, 0)
+	cacheURL := os.Getenv("CACHE_URL")
+	cachePASS := os.Getenv("CACHE_PASS")
+	cache, err := redis.New(cacheURL, cachePASS, 0)
 	if err != nil {
 		log.Fatal("error creating new cache database", err)
 		return
 	}
 	defer cache.Close()
 
-	service, err := service.New(database, cache, generator, logger)
+	service, err := service.New(db, cache, generator, logger)
 	if err != nil {
 		log.Fatal("error creating new service", err)
 		return
@@ -71,7 +69,7 @@ func main() {
 	mux.HandleFunc("POST /shorten/", handler.AddLinkHandler)
 	mux.HandleFunc("GET /{shortCode}", handler.GetLinkHandler)
 
-	Port, err := strconv.Atoi(os.Getenv("Port"))
+	Port, err := strconv.Atoi(os.Getenv("API_PORT"))
 	if err != nil {
 		log.Fatal("error converting Port to integer", err)
 		return
