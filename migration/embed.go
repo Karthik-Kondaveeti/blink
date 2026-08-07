@@ -1,10 +1,6 @@
 package migration
 
-import (
-	"embed"
-
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-)
+import "embed"
 
 //go:embed migrations/*.sql
 var MigrationFS embed.FS
