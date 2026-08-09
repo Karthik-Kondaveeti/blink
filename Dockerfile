@@ -14,7 +14,6 @@ FROM alpine:3.24
 WORKDIR /
 
 COPY --from=builder /blink/server /
-COPY --from=builder /blink/.env .
 COPY --from=builder /blink/migration/migrations /migrations
 
 CMD ["./server"]
