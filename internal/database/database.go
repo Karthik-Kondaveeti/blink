@@ -5,7 +5,7 @@ import (
 )
 
 type Database interface {
-	AddLink(ctx context.Context, shortCode string, originalURL string) error
-	GetLink(ctx context.Context, shortCode string) (string, error)
+	AddLink(ctx context.Context, id uint64, originalURL string) error
+	GetLink(ctx context.Context, id uint64) (string, error)
 	Close() error
 }

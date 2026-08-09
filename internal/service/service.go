@@ -58,7 +58,11 @@ func (s *Service) GetLink(ctx context.Context, shortCode string) (string, error)
 			"short_code", shortCode,
 		)
 
-		originalURL, err = s.db.GetLink(ctx, shortCode)
+		id, err := s.generator.Decode(shortCode)
+		if err != nil {
+			return "", err
+		}
+		originalURL, err = s.db.GetLink(ctx, id)
 		if err != nil {
 			return "", err
 		}
@@ -81,15 +85,16 @@ func (s *Service) AddLink(ctx context.Context, originalURL string) (string, erro
 		return "", errors.New("Invalid URL!")
 	}
 
-	shortCode := s.generator.Generate()
+	id := s.generator.Generate()
 	err := s.db.AddLink(
 		ctx,
-		shortCode,
+		id,
 		originalURL,
 	)
 
 	if err != nil {
 		return "", err
 	}
+	shortCode := s.generator.Encode(id)
 	return shortCode, nil
 }

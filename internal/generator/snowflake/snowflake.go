@@ -2,6 +2,7 @@ package snowflake
 
 import (
 	"errors"
+	"strings"
 	"sync"
 	"time"
 )
@@ -9,10 +10,12 @@ import (
 type Snowflake struct {
 	WorkerID      uint16
 	Sequence      uint16
-	LastTimestamp int64
+	LastTimestamp uint64
 
 	mu sync.Mutex
 }
+
+const charSet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 func New(workerID uint16) (*Snowflake, error) {
 	if workerID > 1023 {
@@ -23,12 +26,11 @@ func New(workerID uint16) (*Snowflake, error) {
 	}, nil
 }
 
-func encodeBase62(id int64) string {
+func (g *Snowflake) Encode(id uint64) string {
 	if id == 0 {
 		return "a"
 	}
 
-	const charSet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	var result []byte
 	for id > 0 {
 		result = append(result, charSet[id%62])
@@ -40,12 +42,24 @@ func encodeBase62(id int64) string {
 	return string(result)
 }
 
-func (g *Snowflake) Generate() string {
+func (g *Snowflake) Decode(code string) (uint64, error) {
+	var id uint64
+	for _, ch := range code {
+		value := strings.IndexRune(charSet, ch)
+		if value == -1 {
+			return 0, errors.New("cannot decode given string!")
+		}
+		id = id*62 + uint64(value)
+	}
+	return id, nil
+}
+
+func (g *Snowflake) Generate() uint64 {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
-	timestamp := time.Now().UnixMilli()
-	workerID := int64(g.WorkerID)
+	workerID := uint64(g.WorkerID)
+	timestamp := uint64(time.Now().UnixMilli())
 	if timestamp == g.LastTimestamp && g.Sequence < 4095 {
 		g.Sequence++
 	} else {
@@ -54,7 +68,7 @@ func (g *Snowflake) Generate() string {
 	}
 
 	// timestamp(41), workerID(10), sequence(12)
-	id := (timestamp << 22) | (workerID << 12) | int64(g.Sequence)
+	id := (timestamp << 22) | (workerID << 12) | uint64(g.Sequence)
 
-	return encodeBase62(id)
+	return id
 }

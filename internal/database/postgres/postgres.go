@@ -39,31 +39,31 @@ func New(connStr string, tablename string) (*Postgres, error) {
 	return &Postgres{
 		db: db,
 		insertQuery: fmt.Sprintf(
-			`INSERT INTO %s (short_code, original_url)
+			`INSERT INTO %s (id, original_url)
 			VALUES ($1, $2)`,
 			tablename,
 		),
 		selectQuery: fmt.Sprintf(
-			`SELECT original_url FROM %s WHERE short_code = $1`,
+			`SELECT original_url FROM %s WHERE id = $1`,
 			tablename,
 		),
 	}, nil
 }
 
-func (p *Postgres) AddLink(ctx context.Context, shortCode string, originalURL string) error {
-	_, err := p.db.Exec(ctx, p.insertQuery, shortCode, originalURL)
+func (p *Postgres) AddLink(ctx context.Context, id uint64, originalURL string) error {
+	_, err := p.db.Exec(ctx, p.insertQuery, id, originalURL)
 	if err != nil {
 		return fmt.Errorf("Add Link: %w", err)
 	}
 	return nil
 }
 
-func (p *Postgres) GetLink(ctx context.Context, shortCode string) (string, error) {
+func (p *Postgres) GetLink(ctx context.Context, id uint64) (string, error) {
 	// for testing
 	// time.Sleep(500 * time.Millisecond)
 
 	var originalURL string
-	err := p.db.QueryRow(ctx, p.selectQuery, shortCode).Scan(&originalURL)
+	err := p.db.QueryRow(ctx, p.selectQuery, id).Scan(&originalURL)
 	if err != nil {
 		return "", fmt.Errorf("Get Link: %w", err)
 	}
